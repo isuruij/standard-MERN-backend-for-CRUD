@@ -1,7 +1,6 @@
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
-
-
+const jwt = require("jsonwebtoken")
 
 // creating a schema to create a model
 const Schema = mongoose.Schema;
@@ -26,8 +25,16 @@ const userSchema = new Schema({
     type: String,
     required: true,
     trim: true,
-  }
+  },
+  tokens:[
+    {
+        token:{
+            type:String,
+        }
+    }
+  ]
 });
+
 
 
 userSchema.pre("save", async function (next) {
@@ -56,6 +63,14 @@ userSchema.statics.findByCredentials = async (email,password)=>{
   return user;
 
 
+}
+
+userSchema.methods.generateAuthToken = async function(){
+    const user = this;
+    const token = jwt.sign({_id:user._id.toString()},"mysecret")
+    user.tokens = user.tokens.concat({token})
+    await user.save()
+    return token;
 }
 
 // creating a model using the schema
