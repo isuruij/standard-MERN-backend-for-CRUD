@@ -3,13 +3,29 @@ const router = express.Router();
 
 const User = require("./model"); 
 
+// Authorization
+
+router.post("/users/login", async (req, res) => {
+  try {
+    console.log("hi")
+    const user = await User.findByCredentials(
+      req.body.email,
+      req.body.password
+    );
+    console.log(user)
+    res.send(user);
+  } catch (error) {
+    res.status(401).send();
+  }
+});
+
 router.post("/users", async (req, res) => {
     console.log(req.body);
     const user = new User(req.body);
    
     try {  
       await user.save();
-      res.status(201).send(201).send(user);
+      res.status(201).send(user);
     } catch (error) {
       res.status(400).send(error);
     }
