@@ -24,22 +24,39 @@ router.post("/users/login", async (req, res) => {
 });
 
 
-router.post("/users/login", async (req,res)=>{
-  try{
-    const user = await User.findByCredentials(req.body.email,req.body.password)
-    const token = await user.generateAuthToken()
-    res.send(user)
-  }catch(error){
-    res.status(401).send()
-  }
+router.post("/users/logout",auth, async (req, res) => {
+try{
+
+  req.user.tokens = req.user.tokens.filter((token)=>{
+    return token.token != req.token;
+  })
+
+  await req.user.save()
+  res.send({message:"logged out"})
+
+}catch(error){
+    res.status(500).send()
+}
 
 })
+
+
+// router.post("/users/login", async (req,res)=>{
+//   try{
+//     const user = await User.findByCredentials(req.body.email,req.body.password)
+//     const token = await user.generateAuthToken()
+//     res.send(user)
+//   }catch(error){
+//     res.status(401).send()
+//   }
+
+// })
 
 router.post("/users", async (req, res) => {
     console.log(req.body);
     const user = new User(req.body);
    
-    try {  
+    try {   
       await user.save();
       res.status(201).send(user);
     } catch (error) {
@@ -48,9 +65,10 @@ router.post("/users", async (req, res) => {
   }); 
 
 
-  router.get("/users/:id", async (req, res) => {
+  router.get("/users/me",auth, async (req, res) => {
     try {
-      const user = await User.find({id:req.params.id});
+      const _id = req.user._id;
+      const user = await User.find({_id:_id});
       res.status(200).send(user);
     } catch (error) { 
       res.status(400).send(error);  
@@ -58,21 +76,22 @@ router.post("/users", async (req, res) => {
   }); 
 
 
-  router.get("/users",auth, async (req, res) => {
-    try {
-      const user = await User.find();
-      res.status(200).send(user);
-    } catch (error) { 
-      res.status(400).send(error);  
-    } 
-  });  
+  // router.get("/users",auth, async (req, res) => {
+  //   try {
+  //     console.log(req.user)
+  //     const user = await User.find();
+  //     res.status(200).send(user);
+  //   } catch (error) { 
+  //     res.status(400).send(error);  
+  //   } 
+  // });  
 
  
 
-  router.patch("/users/:name", async (req, res) => {
+  router.patch("/users/me", auth,async (req, res) => {
     try {
       const updatedUser = await User.findOneAndUpdate(
-        { name: req.params.name },
+        { _id: req.user._id },
         req.body,
         { new: true }
       );
@@ -91,9 +110,9 @@ router.post("/users", async (req, res) => {
 
 
 
-  router.delete("/users/:name", async (req, res) => {
+  router.delete("/users/me", auth,async (req, res) => {
     try {
-      const deletedUser = await User.findOneAndDelete({ name: req.params.name });
+      const deletedUser = await User.findOneAndDelete({ _id: req.user._id });
    
       if (!deletedUser) {
         // If no user with the specified name is found
